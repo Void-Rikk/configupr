@@ -11,3 +11,28 @@ cat /etc/passwd | grep -o "^[^:]*" | sort
 ```console
 cat /etc/protocols | awk '{print $2, $1}' | sort -r -n | head -n 5
 ```
+
+
+## Задача 3
+#### Написать программу banner средствами bash для вывода текстов
+
+```bash
+#!/bin/bash
+
+echo -n "+-"
+
+for ((i=0; i<${#1}; i++)) do
+	echo -n "-"
+done
+
+echo "-+"
+echo -n "| $1"
+echo " |"
+echo -n "+-"
+
+for ((i=0; i<${#1}; i++)) do
+	echo -n "-"
+done
+
+echo "-+"
+```
