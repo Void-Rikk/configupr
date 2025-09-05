@@ -9,5 +9,5 @@ cat /etc/passwd | grep -o "^[^:]*" | sort
 #### Вывести данные /etc/protocols в отформатированном и отсортированном порядке для 5 наибольших портов
 
 ```console
-
+cat /etc/protocols | awk '{print $2, $1}' | sort -r -n | head -n 5
 ```
