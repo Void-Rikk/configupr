@@ -2,6 +2,9 @@ const consoleEl = document.getElementById('console');
 const inputForm = document.getElementById('inputForm');
 const cmdInput = document.getElementById('cmdInput');
 
+let scriptRunning = false;
+let scriptAborted = false;
+
 function appendToConsole(text, className = '') {
     const el = document.createElement('div');
     if (className) el.className = className;
@@ -10,18 +13,16 @@ function appendToConsole(text, className = '') {
     consoleEl.scrollTop = consoleEl.scrollHeight;
 }
 
-// простой парсер: разделяет по пробелам (несколько пробелов считаются одним)
 function parseInput(raw) {
     const trimmed = raw.trim();
     if (trimmed === '') return null;
-    // разделяем по пробелам (включая табы) - регулярка \s+
     const parts = trimmed.split(/\s+/);
     const command = parts[0];
     const args = parts.slice(1);
     return { command, args };
 }
 
-function handleCommandLine(line) {
+function handleCommandLine(line, fromScript = false) {
     appendToConsole(`> ${line}`, 'input-line');
 
     const parsed = parseInput(line);
@@ -31,11 +32,8 @@ function handleCommandLine(line) {
 
     if (command === 'exit') {
         appendToConsole('exit: закрытие приложения...');
-        // вызываем метод из preload -> main
-        if (window.vfsAPI && typeof window.vfsAPI.exitApp === 'function') {
+        if (!fromScript && window.vfsAPI && typeof window.vfsAPI.exitApp === 'function') {
             window.vfsAPI.exitApp();
-        } else {
-            appendToConsole('Невозможно закрыть приложение из renderer (API не доступен).');
         }
         return;
     }
@@ -50,11 +48,14 @@ function handleCommandLine(line) {
         return;
     }
 
-    appendToConsole(`Unknown command: ${command}`);
+    appendToConsole(`[error] Unknown command: ${command}`);
+    if (fromScript) {
+        scriptAborted = true;
+    }
 }
 
-inputForm.addEventListener('submit', (ev) => {
-    ev.preventDefault();
+inputForm.addEventListener('submit', (e) => {
+    e.preventDefault();
     const line = cmdInput.value;
     if (!line.trim()) {
         cmdInput.value = '';
@@ -64,3 +65,26 @@ inputForm.addEventListener('submit', (ev) => {
     cmdInput.value = '';
     cmdInput.focus();
 });
+
+if (window.vfsAPI) {
+    window.vfsAPI.onOutput((msg) => {
+        if (msg.type === 'run-script') {
+            scriptRunning = true;
+            scriptAborted = false;
+
+            for (const line of msg.lines) {
+                if (scriptAborted) break;
+                handleCommandLine(line, true);
+            }
+
+            if (scriptAborted) {
+                appendToConsole('[script stopped due to error]');
+            }
+
+            scriptRunning = false;
+        } else if (msg.type === 'error') {
+            appendToConsole(`[error] ${msg.message}`);
+        }
+    });
+}
+

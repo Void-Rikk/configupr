@@ -1,7 +1,7 @@
 {
   "name": "my-electron-app",
   "version": "1.0.0",
-  "description": "Hello World!",
+  "description": "Console emulator",
   "main": "pract1/index.js",
   "scripts": {
     "start": "electron .",
