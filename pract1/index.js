@@ -1,11 +1,14 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const fs = require("fs");
+const { parseXmlFile } = require("./vfs-loader");
 
 const options = {
     vfsPath: null,
     scriptPath: null,
 };
+
+let vfsData = null;
 
 function parseArgs() {
     const args = process.argv.slice(2);
@@ -36,6 +39,15 @@ function createWindow() {
     win.loadFile(path.join(__dirname, 'index.html'));
 
     win.webContents.on('did-finish-load', () => {
+        if (options.vfsPath) {
+            try {
+                vfsData = parseXmlFile(options.vfsPath);
+                win.webContents.send('command-output', { type: 'vfs-loaded', vfs: vfsData });
+            } catch (err) {
+                win.webContents.send('command-output', { type: 'error', message: err.message });
+            }
+        }
+
         if (options.scriptPath) {
             try {
                 const lines = fs.readFileSync(options.scriptPath, 'utf-8').split('\n').filter(Boolean);

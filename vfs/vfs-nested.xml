@@ -1,0 +1,25 @@
+<vfs name="/" type="dir">
+    <dir name="/home">
+        <dir name="/user">
+            <file name="notes.txt">VXNlciBmaWxl</file>
+            <file name="text.txt">1
+                2
+                3
+                4
+                5
+                6
+                7
+                8
+                9
+                10
+                11
+                12
+                13
+                14
+                15
+            </file>
+        </dir>
+        <file name="hello.txt">SGVsbG8=</file>
+    </dir>
+    <file name="system.log">U3lzdGVtIGxvZw==</file>
+</vfs>

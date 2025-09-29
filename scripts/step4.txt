@@ -1,0 +1,5 @@
+ls
+cd home
+cd user
+tail text.txt
+echo "End of the script"

@@ -5,6 +5,17 @@ const cmdInput = document.getElementById('cmdInput');
 let scriptRunning = false;
 let scriptAborted = false;
 
+let vfs = null;
+let currentDir = null;
+const context = [];
+
+function findChild(dir, name) {
+    if (!(name[0] === '/')) {
+        name = '/' + name;
+    }
+    return dir.children.find(c => c.name === name);
+}
+
 function appendToConsole(text, className = '') {
     const el = document.createElement('div');
     if (className) el.className = className;
@@ -22,7 +33,7 @@ function parseInput(raw) {
     return { command, args };
 }
 
-function handleCommandLine(line, fromScript = false) {
+async function handleCommandLine(line, fromScript = false) {
     appendToConsole(`> ${line}`, 'input-line');
 
     const parsed = parseInput(line);
@@ -38,13 +49,69 @@ function handleCommandLine(line, fromScript = false) {
         return;
     }
 
+
     if (command === 'ls') {
-        appendToConsole(`ls вызвана с аргументами: ${args.length ? args.join(' ') : '(нет)'}`);
+        if (!currentDir) {
+            appendToConsole("[error] VFS not loaded");
+            return;
+        }
+        const list = currentDir.children.map(c => `${c.type}: ${c.name}`).join(", ");
+        appendToConsole(list || "(пусто)");
         return;
     }
 
     if (command === 'cd') {
-        appendToConsole(`cd вызвана с аргументами: ${args.length ? args.join(' ') : '(нет)'}`);
+        if (!currentDir) {
+            appendToConsole("[error] VFS not loaded");
+            return;
+        }
+        if (args.length === 0) {
+            appendToConsole("[error] cd: укажите директорию");
+            return;
+        }
+        if (args[0] === '..' || args[0] === '../') {
+            currentDir = context[context.length - 1];
+            appendToConsole(`вернулись в ${context.pop().name}`);
+            return;
+        }
+        const target = findChild(currentDir, args[0]);
+        if (!target || target.type !== "dir") {
+            appendToConsole(`[error] cd: нет такой директории: ${args[0]}`);
+            if (fromScript) scriptAborted = true;
+            return;
+        }
+        context.push(currentDir);
+        currentDir = target;
+        appendToConsole(`перешли в ${args[0]}`);
+        return;
+    }
+
+    if (command === 'echo') {
+        const parsedArg = args.join(" ");
+        const regExp = /^["']+.*["']$/;
+        if (regExp.test(parsedArg)) {
+            appendToConsole(parsedArg.slice(1, -1));
+        }
+        else {
+            appendToConsole(parsedArg);
+        }
+        return;
+    }
+
+    if (command === 'tail') {
+        if (!currentDir) {
+            appendToConsole("[error] VFS not loaded");
+            return;
+        }
+        const file = currentDir.children.find(c => c.name === args[0]);
+        if (!file) {
+            appendToConsole("[error] no such file");
+            return;
+        }
+        const lines = file.content.split('\n');
+        for (let i = (lines.length - 11 || 0); i < lines.length; i++) {
+            appendToConsole(lines[i].trim());
+        }
         return;
     }
 
@@ -68,17 +135,20 @@ inputForm.addEventListener('submit', (e) => {
 
 if (window.vfsAPI) {
     window.vfsAPI.onOutput((msg) => {
-        if (msg.type === 'run-script') {
+        if (msg.type === 'vfs-loaded') {
+            vfs = msg.vfs;
+            currentDir = vfs;
+            appendToConsole("VFS успешно загружен");
+        } else if (msg.type === 'run-script') {
             scriptRunning = true;
             scriptAborted = false;
 
             for (const line of msg.lines) {
-                if (scriptAborted) break;
+                if (scriptAborted) {
+                    appendToConsole('[script stopped due to error]');
+                    break;
+                }
                 handleCommandLine(line, true);
-            }
-
-            if (scriptAborted) {
-                appendToConsole('[script stopped due to error]');
             }
 
             scriptRunning = false;
