@@ -1,8 +1,9 @@
 <vfs name="/" type="dir">
-    <dir name="/home">
-        <dir name="/user">
-            <file name="notes.txt">VXNlciBmaWxl</file>
-            <file name="text.txt">1
+    <dir name="/home" type="dir">
+        <dir name="/user" type="dir">
+            <dir name="test" type="dir"></dir>
+            <file name="notes.txt" type="file">VXNlciBmaWxl</file>
+            <file name="text.txt" type="file">1
                 2
                 3
                 4
@@ -19,7 +20,7 @@
                 15
             </file>
         </dir>
-        <file name="hello.txt">SGVsbG8=</file>
+        <file name="hello.txt" type="file">SGVsbG8=</file>
     </dir>
-    <file name="system.log">U3lzdGVtIGxvZw==</file>
+    <file name="system.log" type="file">U3lzdGVtIGxvZw==</file>
 </vfs>

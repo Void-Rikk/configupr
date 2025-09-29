@@ -1,0 +1,5 @@
+cd home
+cd user
+ls
+rmdir test
+ls

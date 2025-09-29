@@ -70,7 +70,7 @@ async function handleCommandLine(line, fromScript = false) {
             return;
         }
         if (args[0] === '..' || args[0] === '../') {
-            currentDir = context[context.length - 1];
+            currentDir = context[context.length - 1] ?? currentDir;
             appendToConsole(`вернулись в ${context.pop().name}`);
             return;
         }
@@ -112,6 +112,19 @@ async function handleCommandLine(line, fromScript = false) {
         for (let i = (lines.length - 11 || 0); i < lines.length; i++) {
             appendToConsole(lines[i].trim());
         }
+        return;
+    }
+
+    if (command === 'rmdir') {
+        if (!currentDir) {
+            appendToConsole("[error] VFS not loaded");
+            return;
+        }
+        const dir = currentDir.children.find(c => (c.name === args[0] && c.type === "dir"));
+        if (!dir) {
+            appendToConsole("[error] directory is not empty or no such directory");
+        }
+        currentDir.children = currentDir.children.filter(item => !(item.name === dir.name && item.type === "dir"));
         return;
     }
 
